@@ -97,80 +97,6 @@ async function askOllama(prompt) {
     return data.response || '';
 }
 /**
- * streamOllama
- * Calls the same endpoint but with stream set to true, so the service
- * sends many small JSON lines. Each line may contain a field named response
- * which is a piece of text. We do not buffer the full answer. We pass text to
- * the browser as it arrives.
- *
- * Input: req and res from the server, and the prompt string
- * Output: we write plain text chunks to res and then end the response
- */
-async function streamOllama(req, res, prompt) {
-    const body = {
-        model: cfg.ollama.model,
-        prompt,
-        stream: true, // request a stream of small JSON objects
-        options: cfg.ollama.options || {}
-    };
-    const endpoint = new URL('/api/generate', cfg.ollama.host).toString();
-    const r = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-    });
-    // If the request failed or the body is missing we return an error to the browser
-    if (!r.ok || !r.body) {
-        const text = await r.text().catch(() => '');
-        res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
-        res.end('Ollama error: ' + text);
-        return;
-    }
-    // Tell the browser that we will send text in chunks
-    res.writeHead(200, {
-        'Content-Type': 'text/plain; charset=utf-8',
-        'Transfer-Encoding': 'chunked',
-        'Cache-Control': 'no-cache'
-    });
-    // r.body is a stream. We get a reader to pull chunks one by one
-    const reader = r.body.getReader();
-    const decoder = new TextDecoder();
-    // We collect text into a buffer and split on new lines
-    // Each full line should be a JSON string like { "response": "piece", "done": false }
-    let buf = '';
-    while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        // Convert bytes to text and add to our buffer
-        buf += decoder.decode(value, { stream: true });
-        // Process each full line we have received so far
-        let idx;
-        while ((idx = buf.indexOf('\n')) >= 0) {
-            const line = buf.slice(0, idx).trim();
-            buf = buf.slice(idx + 1);
-            if (!line) continue;
-            // Try to parse the line. If it is valid JSON we send the text field to the browser.
-            try {
-                const obj = JSON.parse(line);
-                if (typeof obj.response === 'string') {
-                    res.write(obj.response);
-                }
-            } catch (_) {
-                // Ignore a broken line. The next loop will read more data and the text will line up.
-            }
-        }
-    }
-    // After the loop we may still have one more partial line
-    if (buf.trim()) {
-        try {
-            const obj = JSON.parse(buf.trim());
-            if (typeof obj.response === 'string') res.write(obj.response);
-        } catch (_) {}
-    }
-    // Close the response so the browser knows the stream ended
-    res.end();
-}
-/**
  * pageHtml
  * Returns the complete HTML page as a template string.
  * We keep all the HTML in one place so it is easy for students to read.
@@ -208,43 +134,39 @@ border-radius: 8px; min-height: 80px; background: #fafafa; }
 </head>
 <body>
 <!-- Page title -->
-<h1>Ollama Starter</h1>
-<!-- CARD 1: Ask the model (normal and streaming) -->
+<h1>TravelInsightAI</h1>
+<!-- CARD 1: Input Area -->
 <div class="card">
-<h2>Ask the model</h2>
-<p>Type a question below and choose Ask or Ask with streaming.</p>
-<!-- Prompt input -->
-<textarea id="prompt" placeholder="Write your question here"></textarea>
-<!-- Buttons for non streaming and streaming calls -->
-<div style="margin-top: 8px;">
-<button id="ask" class="btn">Ask</button>
-<button id="askStream" class="btn">Ask with streaming</button>
+<h2>Let's plan your trip</h2>
+<p>Please provide this information, AI will offer customized trip advice to you</p>
+
+<!-- destination -->
+<div class="row" style="margin-bottom: 12px;">
+    <label>Trip Destination</label>
+    <input id="destination" type="text" placeholder="例如：日本東京、法國巴黎" />
 </div>
-<!-- Where the non streaming answer will be shown -->
-<h3>Answer</h3>
+
+<!-- start time -->
+<div class="row" style="margin-bottom: 12px;">
+    <label>Start Time</label>
+    <input id="startDate" type="date" />
+</div>
+
+<!-- end time -->
+<div class="row" style="margin-bottom: 12px;">
+    <label>End Time</label>
+    <input id="endDate" type="date" />
+</div>
+
+<!-- Submit -->
+<div style="margin-top: 8px;">
+    <button id="planTrip" class="btn">Plan the trip</button>
+</div>
+
+<!-- Result -->
+<h3>Result</h3>
 <div id="out"></div>
-<!-- Where the streaming answer will be shown -->
-<h3>Streaming answer</h3>
-<div id="outStream"></div>
 </div>
-<!-- CARD 2: Show current config from the server -->
-<div class="card">
-<h2>Current config</h2>
-<p>This shows what is in config.json right now.</p>
-<pre id="cfg"></pre>
-<button id="refresh" class="btn">Refresh</button>
-</div>
-<!-- CARD 3: Change config and send it back to the server -->
-<div class="card">
-<h2>Change config</h2>
-<p>Change values and press Save. The server updates config.json on disk.</p>
-<div class="row"><label>Host</label><input id="host" type="text" /></div>
-<div class="row"><label>Model</label><input id="model" type="text" /></div>
-<div class="row"><label>Temperature</label><input id="temperature" type="text"
-/></div>
-<div class="row"><label>Top P</label><input id="topp" type="text" /></div>
-<div style="margin-top: 8px;">
-<button id="save" class="btn">Save</button>
 </div>
 </div>
 <script>
@@ -289,13 +211,13 @@ alert('Save failed');
 }
 };
 // Non streaming button handler
-// Calls POST /chat. The server returns a single JSON with the full answer.
+// Calls POST /user/preferences. The server returns a single JSON with the full answer.
 document.getElementById('ask').onclick = async () => {
 const btn = document.getElementById('ask');
 btn.disabled = true;
 document.getElementById('out').textContent = 'Thinking...';
 try {
-const r = await fetch('/chat', {
+const r = await fetch('/user/preferences', {
 method: 'POST',
 headers: { 'Content-Type': 'application/json' },
 body: JSON.stringify({ prompt: document.getElementById('prompt').value })
@@ -334,6 +256,49 @@ out.textContent = 'Stream failed: ' + e.message;
 btn.disabled = false;
 }
 };
+
+// 旅遊規劃按鈕處理
+document.getElementById('planTrip').onclick = async () => {
+    const btn = document.getElementById('planTrip');
+    btn.disabled = true;
+    document.getElementById('out').textContent = '正在規劃您的旅程...';
+    
+    try {
+        const destination = document.getElementById('destination').value;
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        
+        // 驗證輸入
+        if (!destination || !startDate || !endDate) {
+            alert('請填寫所有欄位');
+            btn.disabled = false;
+            return;
+        }
+        
+        const r = await fetch('/user/preferences', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                destination: destination,
+                startDate: startDate,
+                endDate: endDate
+            })
+        });
+        
+        const data = await r.json();
+        
+        if (data.error) {
+            document.getElementById('out').textContent = '錯誤：' + data.error;
+        } else {
+            // 格式化顯示結果
+            document.getElementById('out').textContent = '';
+        }
+    } catch (e) {
+        document.getElementById('out').textContent = '請求失敗：' + e.message;
+    } finally {
+        btn.disabled = false;
+    }
+};
 </script>
 </body>
 </html>`;
@@ -368,31 +333,6 @@ const server = http.createServer(async(req, res) => {
         res.end(pageHtml());
         return;
     }
-    // GET /config
-    // Reads config.json fresh from disk and returns it
-    if (req.method === 'GET' && pathname === '/config') {
-        cfg = readConfig(); // always re read so we show what is really on disk
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(cfg));
-        return;
-    }
-    // POST /config
-    // Receives a JSON body with the new config and writes it to config.json
-    if (req.method === 'POST' && pathname === '/config') {
-        try {
-            const body = await parseBody(req);
-            // Very simple shape check to help new students find mistakes
-            if (!body.ollama || !body.server) throw new Error('Config is missing fields');
-            writeConfig(body);
-            cfg = readConfig();
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ ok: true }));
-        } catch (e) {
-            res.writeHead(400, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: e.message }));
-        }
-        return;
-    }
     // POST /chat
     // Expects a body like { "prompt": "your text" }
     // Calls askOllama to get a single full answer as JSON
@@ -410,20 +350,65 @@ const server = http.createServer(async(req, res) => {
         }
         return;
     }
-    // POST /chat-stream
-    // Same input as /chat but sends back a stream of text chunks
-    if (req.method === 'POST' && pathname === '/chat-stream') {
+
+    // POST /chat
+    if (req.method === 'POST' && pathname === '/user/preferences') {
         try {
             const body = await parseBody(req);
-            const prompt = (body && body.prompt) ? String(body.prompt) : '';
-            if (!prompt) throw new Error('Missing prompt');
-            await streamOllama(req, res, prompt);
+
+            // extract trip info
+            const destination = (body && body.destination) ? String(body.destination) : '';
+            const startDate = (body && body.startDate) ? String(body.startDate) : '';
+            const endDate = (body && body.endDate) ? String(body.endDate) : '';
+
+            // validate input
+            if (!destination) throw new Error('Missing destination');
+            if (!startDate) throw new Error('Missing start date');
+            if (!endDate) throw new Error('Missing end date');
+
+            // 構建給 Ollama 的 prompt
+            const prompt = `I'm planning a trip to ${destination}，from${startDate}to${endDate}。
+
+            please provide below information in json format：
+
+            1. recommended spot：list ${destination} must-visit attraction
+
+            2. suggested prepared equipment：provide suggestion on things to bring based on trip destination and time
+
+            3. trip precautions:provide anything that the traveler should be aware of based on the destination and time
+
+           `;
+
+            // 發送給 Ollama
+            const answer = await askOllama(prompt);
+
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+                destination,
+                startDate,
+                endDate,
+                answer
+            }));
         } catch (e) {
-            res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
-            res.end('Stream error: ' + e.message);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: e.message }));
         }
         return;
     }
+    // // POST /chat-stream
+    // // Same input as /chat but sends back a stream of text chunks
+    // if (req.method === 'POST' && pathname === '/chat-stream') {
+    //     try {
+    //         const body = await parseBody(req);
+    //         const prompt = (body && body.prompt) ? String(body.prompt) : '';
+    //         if (!prompt) throw new Error('Missing prompt');
+    //         await streamOllama(req, res, prompt);
+    //     } catch (e) {
+    //         res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+    //         res.end('Stream error: ' + e.message);
+    //     }
+    //     return;
+    // }
     // If we get here the route is unknown
     res.writeHead(404, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'Not found' }));
