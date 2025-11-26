@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Delete Account</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 640px; margin: 40px auto; }
+
+    /* Header: centered title, right column stacks badge over button */
+    header.site-header {
+      display: grid;
+      grid-template-columns: 1fr auto; /* left spacer, right controls */
+      align-items: center;
+      margin-bottom: 16px;
+      min-height: 64px;
+      position: relative;
+    }
+    header .brand {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      font-weight: 800;
+      font-size: 2.2rem;   /* larger centered title */
+      text-align: center;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+    header .right {
+      display: grid;
+      justify-items: end;
+      align-items: center;
+      gap: 6px;            /* space between badge and button */
+    }
+
+    .badge {
+      background: #f0f2f5;
+      border: 1px solid #e0e0e0;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      color: #333;
+    }
+
+    form { display: grid; gap: 10px; }
+    input { padding: 8px; }
+    button { padding: 8px 12px; background: #b00020; color: white; border: none; }
+    .status { min-height: 1.5em; }
+
+    /* Tweak for narrow screens */
+    @media (max-width: 420px) {
+      header .brand { font-size: 1.8rem; }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand">Travel Explorer</div>
+    <div class="right">
+      <div id="userBadge" class="badge">Guest</div>
+      <!-- shown only when signed in -->
+      <button id="signoutBtn" style="padding:6px 10px; display:none;">Sign Out</button>
+    </div>
+  </header>
+
+  <h1>Delete Account</h1>
+  <p style="color:#b00020">This action is irreversible.</p>
+  <form id="deleteForm">
+    <input id="password" placeholder="Confirm Password" type="password" required />
+    <button type="submit">Delete My Account</button>
+    <div class="status" id="status"></div>
+  </form>
+
+  <p><a href="/">Back to Sign In</a></p>
+
+  <script type="module">
+    import { api, setStatus, getMe, renderUserBadge } from "./app.js";
+
+    // Require sign-in: if not signed in, redirect to "/"
+    async function enforceAuth() {
+      const me = await getMe().catch(() => ({ signedIn: false }));
+      if (!me?.signedIn) {
+        window.location.href = "/";
+        return null;
+      }
+      // set badge and show signout button
+      renderUserBadge(me);
+      const btn = document.getElementById("signoutBtn");
+      if (btn) btn.style.display = "inline-block";
+      return me;
+    }
+
+    const me = await enforceAuth();
+    if (!me) {
+      // redirected already
+      throw new Error("Redirecting to sign in");
+    }
+
+    const form = document.getElementById("deleteForm");
+    const statusEl = document.getElementById("status");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const password = document.getElementById("password").value;
+      try {
+        setStatus(statusEl, "Deleting account…");
+        await api("/api/delete-account", "POST", { password });
+        setStatus(statusEl, "Account deleted. Redirecting to sign in in 3 seconds…", false);
+        // Reflect as Guest visually (optional)
+        renderUserBadge({ signedIn: false });
+        // Redirect after 3 seconds
+        setTimeout(() => { window.location.href = "/"; }, 3000);
+      } catch (err) {
+        setStatus(statusEl, err.message, true);
+      }
+    });
+
+    // Sign Out: immediate redirect to Sign In
+    const btn = document.getElementById("signoutBtn");
+    if (btn) {
+      btn.addEventListener("click", async () => {
+        try {
+          await api("/api/signout", "POST");
+        } finally {
+          window.location.href = "/";
+        }
+      });
+    }
+  </script>
+</body>
+</html>

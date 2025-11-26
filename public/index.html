@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Sign In</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 640px; margin: 40px auto; }
+
+    /* Header: centered title, right column stacks badge over button */
+    header.site-header {
+      display: grid;
+      grid-template-columns: 1fr auto; /* left spacer, right controls */
+      align-items: center;
+      margin-bottom: 16px;
+      min-height: 64px;
+      position: relative;
+    }
+    header .brand {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      font-weight: 800;
+      font-size: 2.2rem;   /* larger centered title */
+      text-align: center;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+    header .right {
+      display: grid;
+      justify-items: end;
+      align-items: center;
+      gap: 6px;            /* space between badge and button */
+    }
+
+    .badge {
+      background: #f0f2f5;
+      border: 1px solid #e0e0e0;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      color: #333;
+    }
+
+    form { display: grid; gap: 10px; }
+    input { padding: 8px; }
+    button { padding: 8px 12px; }
+    .nav { margin-top: 16px; display: grid; gap: 8px; }
+    .status { min-height: 1.5em; }
+
+    /* Tweak for narrow screens */
+    @media (max-width: 420px) {
+      header .brand { font-size: 1.8rem; }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand">Travel Explorer</div>
+    <div class="right">
+      <div id="userBadge" class="badge">Guest</div>
+      <!-- Sign Out hidden by default -->
+      <button id="signoutBtn" style="padding:6px 10px; display:none;">Sign Out</button>
+    </div>
+  </header>
+
+  <h1>Sign In</h1>
+  <form id="signinForm">
+    <input id="userId" placeholder="Account ID" required />
+    <input id="password" placeholder="Password" type="password" required />
+    <button type="submit">Sign In</button>
+    <div class="status" id="status"></div>
+  </form>
+
+  <div class="nav">
+    <a href="/signup.html" id="signupLink">Sign Up</a>
+    <!-- Protected links hidden by default -->
+    <a href="/change.html" class="protected-link" style="display:none;">Change Password</a>
+    <a href="/delete.html" class="protected-link" style="display:none;">Delete Account</a>
+  </div>
+
+  <script type="module">
+    import { api, setStatus, getMe, renderUserBadge } from "./app.js";
+
+    // Toggle protected links and signup visibility
+    function toggleProtected(show) {
+      document.querySelectorAll(".protected-link").forEach(el => {
+        el.style.display = show ? "" : "none";
+      });
+      const signoutBtn = document.getElementById("signoutBtn");
+      if (signoutBtn) signoutBtn.style.display = show ? "inline-block" : "none";
+      const signupLink = document.getElementById("signupLink");
+      if (signupLink) signupLink.style.display = show ? "none" : "";
+    }
+
+    // Initialize UI based on current session
+    getMe().then((me) => {
+      renderUserBadge(me);
+      toggleProtected(!!me.signedIn);
+    });
+
+    const form = document.getElementById("signinForm");
+    const statusEl = document.getElementById("status");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const userId = document.getElementById("userId").value.trim();
+      const password = document.getElementById("password").value;
+      try {
+        setStatus(statusEl, "Signing in…");
+        const resp = await api("/api/signin", "POST", { userId, password });
+        setStatus(statusEl, "Signed in! You can now change/delete password.", false);
+        // Update badge and show protected UI
+        renderUserBadge({ signedIn: true, userId: resp.userId });
+        toggleProtected(true);
+      } catch (err) {
+        setStatus(statusEl, err.message, true);
+      }
+    });
+
+    // Sign Out: immediate redirect to Sign In
+    const btn = document.getElementById("signoutBtn");
+    if (btn) {
+      btn.addEventListener("click", async () => {
+        try {
+          await api("/api/signout", "POST");
+        } finally {
+          window.location.href = "/";
+        }
+      });
+    }
+  </script>
+</body>
+</html>
