@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Sign Up</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 640px; margin: 40px auto; }
+
+    /* Header: centered title, right column stacks badge over button */
+    header.site-header {
+      display: grid;
+      grid-template-columns: 1fr auto; /* left spacer, right controls */
+      align-items: center;
+      margin-bottom: 16px;
+      min-height: 64px;
+      position: relative;
+    }
+    header .brand {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      font-weight: 800;
+      font-size: 2.2rem;   /* larger centered title */
+      text-align: center;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+    header .right {
+      display: grid;
+      justify-items: end;
+      align-items: center;
+      gap: 6px;            /* space between badge and button */
+    }
+
+    .badge {
+      background: #f0f2f5;
+      border: 1px solid #e0e0e0;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      color: #333;
+    }
+
+    form { display: grid; gap: 10px; }
+    input { padding: 8px; }
+    button { padding: 8px 12px; }
+    .status { min-height: 1.5em; }
+
+    /* Tweak for narrow screens */
+    @media (max-width: 420px) {
+      header .brand { font-size: 1.8rem; }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand">Travel Explorer</div>
+    <div class="right">
+      <div id="userBadge" class="badge">Guest</div>
+      <!-- Keep Sign Out hidden on signup page -->
+      <button id="signoutBtn" style="padding:6px 10px; display:none;">Sign Out</button>
+    </div>
+  </header>
+
+  <h1>Create Account</h1>
+  <form id="signupForm">
+    <input id="userId" placeholder="Account ID" required />
+    <input id="password" placeholder="Password (min 6 chars)" type="password" required />
+    <button type="submit">Sign Up</button>
+    <div class="status" id="status"></div>
+  </form>
+
+  <p><a href="/">Back to Sign In</a></p>
+
+  <script type="module">
+    import { api, setStatus, getMe, renderUserBadge } from "./app.js";
+
+    // Show current user (usually Guest on signup)
+    getMe().then((me) => {
+      renderUserBadge(me);
+      // Keep Sign Out hidden on signup page even if signed in
+      const btn = document.getElementById("signoutBtn");
+      if (btn) btn.style.display = "none";
+    });
+
+    const form = document.getElementById("signupForm");
+    const statusEl = document.getElementById("status");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const userId = document.getElementById("userId").value.trim();
+      const password = document.getElementById("password").value;
+      try {
+        setStatus(statusEl, "Creating account…");
+        await api("/api/signup", "POST", { userId, password });
+        setStatus(statusEl, "Account created! Redirecting to sign in in 3 seconds…", false);
+        setTimeout(() => { window.location.href = "/"; }, 3000);
+      } catch (err) {
+        setStatus(statusEl, err.message, true);
+      }
+    });
+
+    // Sign Out remains hidden on signup page.
+  </script>
+</body>
+</html>
