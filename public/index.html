@@ -96,6 +96,12 @@
     getMe().then((me) => {
       renderUserBadge(me);
       toggleProtected(!!me.signedIn);
+      
+      // redirect to home.html
+      if (me.signedIn) {
+        window.location.href = "/home.html";
+        return;
+      }
     });
 
     const form = document.getElementById("signinForm");
@@ -108,10 +114,13 @@
       try {
         setStatus(statusEl, "Signing in…");
         const resp = await api("/api/signin", "POST", { userId, password });
-        setStatus(statusEl, "Signed in! You can now change/delete password.", false);
-        // Update badge and show protected UI
-        renderUserBadge({ signedIn: true, userId: resp.userId });
-        toggleProtected(true);
+        setStatus(statusEl, "Signed in! Redirecting to home...", false);
+        
+        // redirect to home.html
+        setTimeout(() => {
+          window.location.href = "/home.html";
+        }, 1000); // display the success message to user after 1 sec
+        
       } catch (err) {
         setStatus(statusEl, err.message, true);
       }

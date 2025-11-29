@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Travel Explorer - Home</title>
+  <style>
+    body { 
+      font-family: system-ui, sans-serif; 
+      max-width: 800px; 
+      margin: 40px auto; 
+      padding: 0 20px;
+    }
+
+    /* Header */
+    header.site-header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      margin-bottom: 24px;
+      min-height: 64px;
+      position: relative;
+    }
+    header .brand {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      font-weight: 800;
+      font-size: 2.2rem;
+      text-align: center;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+    header .right {
+      display: grid;
+      justify-items: end;
+      align-items: center;
+      gap: 6px;
+    }
+    .badge {
+      background: #f0f2f5;
+      border: 1px solid #e0e0e0;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      color: #333;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      border-bottom: 2px solid #e0e0e0;
+      margin-bottom: 24px;
+    }
+    .tab {
+      padding: 12px 24px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      color: #666;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s;
+    }
+    .tab:hover {
+      color: #333;
+      background: #f5f5f5;
+    }
+    .tab.active {
+      color: #667eea;
+      border-bottom-color: #667eea;
+      font-weight: 600;
+    }
+
+    /* Tab Content */
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.3s;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Form Styles */
+    .card { 
+      border: 1px solid #ddd; 
+      border-radius: 12px; 
+      padding: 24px; 
+      margin-bottom: 16px;
+      background: white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .row { 
+      display: flex; 
+      gap: 12px; 
+      align-items: center; 
+      margin-bottom: 12px; 
+    }
+    label { 
+      min-width: 140px; 
+      display: inline-block; 
+      font-weight: 500;
+    }
+    input, textarea { 
+      width: 100%; 
+      padding: 10px; 
+      border-radius: 6px; 
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    button { 
+      padding: 10px 20px; 
+      border: 1px solid #333; 
+      border-radius: 8px; 
+      background: #111; 
+      color: #fff; 
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    button:hover {
+      background: #333;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    button:disabled { 
+      opacity: 0.6; 
+      cursor: not-allowed;
+      transform: none;
+    }
+    button.danger {
+      background: #dc3545;
+      border-color: #dc3545;
+    }
+    button.danger:hover {
+      background: #c82333;
+    }
+
+    #out { 
+      border: 1px solid #eee; 
+      padding: 0;
+      border-radius: 8px; 
+      min-height: 100px; 
+      background: #fafafa;
+      line-height: 1.6;
+    }
+    
+    .section-card {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    .section-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 3px solid #667eea;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .section-content {
+      color: #444;
+      line-height: 1.8;
+    }
+    
+    .section-content ul {
+      margin: 8px 0;
+      padding-left: 20px;
+    }
+    
+    .section-content li {
+      margin-bottom: 8px;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: #999;
+    }
+    .status { 
+      min-height: 1.5em; 
+      margin-top: 8px;
+      font-size: 14px;
+    }
+
+    @media (max-width: 420px) {
+      header .brand { font-size: 1.8rem; }
+      .tab { padding: 10px 16px; font-size: 14px; }
+    }
+
+    select {
+      width: 100%;
+      padding: 10px 18px;
+      font-size: 16px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      background-color: white;
+    }
+
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand">Travel Explorer</div>
+    <div class="right">
+      <div id="userBadge" class="badge">Guest</div>
+      <button id="signoutBtn" style="padding:6px 10px;">Sign Out</button>
+    </div>
+  </header>
+
+  <!-- Tabs Navigation -->
+  <div class="tabs">
+    <button class="tab active" data-tab="trip">🌍 Plan Trip</button>
+    <button class="tab" data-tab="account">⚙️ Account Settings</button>
+  </div>
+
+  <!-- Tab 1: Trip Planning -->
+  <div id="trip-content" class="tab-content active">
+    <div class="card">
+      <h2>Plan Your Trip</h2>
+      <p style="color: #666;">Fill in your travel details and get AI-powered recommendations.</p>
+
+      <div class="row">
+        <label for="destination">Destination</label>
+
+            <select id="destination">
+              <option value="" disabled selected>-- Select a destination --</option>
+
+              <optgroup label="Asia">
+                <option value="Tokyo, Japan">Tokyo, Japan</option>
+                <option value="Kyoto, Japan">Kyoto, Japan</option>
+                <option value="Osaka, Japan">Osaka, Japan</option>
+                <option value="Seoul, South Korea">Seoul, South Korea</option>
+                <option value="Bangkok, Thailand">Bangkok, Thailand</option>
+                <option value="Singapore">Singapore</option>
+              </optgroup>
+
+              <optgroup label="Europe">
+                <option value="Paris, France">Paris, France</option>
+                <option value="London, UK">London, UK</option>
+                <option value="Rome, Italy">Rome, Italy</option>
+                <option value="Barcelona, Spain">Barcelona, Spain</option>
+              </optgroup>
+
+              <optgroup label="North America">
+                <option value="New York City, USA">New York City, USA</option>
+                <option value="San Francisco, USA">San Francisco, USA</option>
+                <option value="Los Angeles, USA">Los Angeles, USA</option>
+                <option value="Austin, USA">Austin, USA</option>
+                <option value="Vancouver, Canada">Vancouver, Canada</option>
+                <option value="Toronto, Canada">Toronto, Canada</option>
+                <option value="Cancun, Mexico">Cancun, Mexico</option>
+                <option value="Mexico City, Mexico">Mexico City, Mexico</option>
+              </optgroup>
+
+              <optgroup label="South America">
+                <option value="Cusco, Peru">Cusco, Peru</option>
+                <option value="Machu Picchu, Peru">Machu Picchu, Peru</option>
+              </optgroup>
+
+            </select>
+
+      </div>
+
+    <div class="row">
+        <label>Start Date</label>
+        <input id="startDate" type="date">
+      </div>
+
+      <div class="row">
+        <label>End Date</label>
+        <input id="endDate" type="date">
+      </div>
+
+      <button id="planTrip" style="margin-top: 8px;">Plan My Trip</button>
+
+      <h3 style="margin-top: 24px;">Travel Recommendations</h3>
+      <div id="out">
+        <div class="empty-state">
+          <span style="font-size: 3rem;">✈️</span>
+          <p>Your personalized travel plan will appear here...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 2: Account Settings -->
+  <div id="account-content" class="tab-content">
+    <!-- Change Password Section -->
+    <div class="card">
+      <h2>Change Password</h2>
+      <p style="color: #666;">Update your account password for better security.</p>
+      
+      <form id="changeForm">
+        <div class="row">
+          <label>Current Password</label>
+          <input id="currentPassword" type="password" placeholder="Enter current password" required>
+        </div>
+
+        <div class="row">
+          <label>New Password</label>
+          <input id="newPassword" type="password" placeholder="Min 6 characters" required>
+        </div>
+
+        <button type="submit" style="margin-top: 8px;">Update Password</button>
+        <div class="status" id="changeStatus"></div>
+      </form>
+    </div>
+
+    <!-- Delete Account Section -->
+    <div class="card">
+      <h2>Delete Account</h2>
+      <p style="color: #dc3545; font-weight: 500;">⚠️ This action is irreversible. Your account and all data will be permanently deleted.</p>
+      
+      <form id="deleteForm">
+        <div class="row">
+          <label>Confirm Password</label>
+          <input id="deletePassword" type="password" placeholder="Enter your password to confirm" required>
+        </div>
+
+        <button type="submit" class="danger" style="margin-top: 8px;">Delete My Account</button>
+        <div class="status" id="deleteStatus"></div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    import { api, renderUserBadge } from './app.js';
+
+    // Check authentication
+    async function checkAuth() {
+      try {
+        const me = await api("/api/me");
+        if (!me.signedIn) {
+          window.location.href = "/";
+          return null;
+        }
+        renderUserBadge(me);
+        return me;
+      } catch (e) {
+        window.location.href = "/";
+        return null;
+      }
+    }
+
+    const me = await checkAuth();
+    if (!me) throw new Error("Not authenticated");
+
+    // Tab Switching
+    const tabs = document.querySelectorAll('.tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const targetTab = tab.dataset.tab;
+        
+        // Update active tab
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        
+        // Update active content
+        tabContents.forEach(content => {
+          content.classList.remove('active');
+        });
+        document.getElementById(`${targetTab}-content`).classList.add('active');
+      });
+    });
+
+    // Sign Out
+    document.getElementById('signoutBtn').onclick = async () => {
+      try {
+        await api("/api/signout", "POST");
+      } finally {
+        window.location.href = "/";
+      }
+    };
+
+    // === TRIP PLANNING ===
+    document.getElementById('planTrip').onclick = async () => {
+      const btn = document.getElementById('planTrip');
+      btn.disabled = true;
+      const outDiv = document.getElementById('out');
+      outDiv.innerHTML = '<div class="empty-state"><span style="font-size: 3rem;">🔄</span><p>Planning your trip...</p></div>';
+
+      try {
+        const destination = document.getElementById('destination').value.trim();
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+
+        if (!destination || !startDate || !endDate) {
+          alert('Please fill in all fields');
+          btn.disabled = false;
+          return;
+        }
+
+        const data = await api("/api/travel-plan", "POST", { destination, startDate, endDate });
+
+        if (data.error) {
+          outDiv.innerHTML = '<div class="empty-state"><span style="font-size: 3rem;">❌</span><p>Error: ' + data.error + '</p></div>';
+        } else {
+          // Parse and format the response
+          formatTravelPlan(outDiv, data);
+        }
+      } catch (e) {
+        outDiv.innerHTML = '<div class="empty-state"><span style="font-size: 3rem;">❌</span><p>Request failed: ' + e.message + '</p></div>';
+      } finally {
+        btn.disabled = false;
+      }
+    };
+
+    // Format travel plan into structured sections
+    function formatTravelPlan(container, data) {
+      container.innerHTML = '';
+      
+      // Header with trip info
+      const header = document.createElement('div');
+      header.style.cssText = 'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; margin-bottom: 16px;';
+      header.innerHTML = `
+        <div style="font-size: 1.5rem; font-weight: bold; margin-bottom: 8px;">📍 ${data.destination}</div>
+        <div style="font-size: 1rem; opacity: 0.9;">📅 ${data.startDate} → ${data.endDate}</div>
+      `;
+      container.appendChild(header);
+
+      // Parse the answer into sections
+      const answer = data.answer;
+      const sections = parseResponseIntoSections(answer);
+
+      // Must Visit Section
+      if (sections.mustVisit) {
+        const mustVisitCard = createSectionCard('🏛️ Must Visit', sections.mustVisit, '#667eea');
+        container.appendChild(mustVisitCard);
+      }
+
+      // Packing List Section
+      if (sections.packingList) {
+        const packingCard = createSectionCard('🎒 Packing List', sections.packingList, '#10b981');
+        container.appendChild(packingCard);
+      }
+
+      // Precautions Section
+      if (sections.precautions) {
+        const precautionsCard = createSectionCard('⚠️ Precautions & Tips', sections.precautions, '#f59e0b');
+        container.appendChild(precautionsCard);
+      }
+
+      // If no sections found, display raw response
+      if (!sections.mustVisit && !sections.packingList && !sections.precautions) {
+        const fallbackCard = document.createElement('div');
+        fallbackCard.className = 'section-card';
+        fallbackCard.innerHTML = `
+          <div class="section-title">📋 Travel Information</div>
+          <div class="section-content" style="white-space: pre-wrap;">${answer}</div>
+        `;
+        container.appendChild(fallbackCard);
+      }
+    }
+
+    // Parse response into sections
+    function parseResponseIntoSections(text) {
+      const sections = {
+        mustVisit: '',
+        packingList: '',
+        precautions: ''
+      };
+
+      // Split by common section headers (case insensitive)
+      const mustVisitMatch = text.match(/MUST VISIT:?\s*([\s\S]*?)(?=PACKING LIST:|PRECAUTIONS:|$)/i);
+      const packingMatch = text.match(/PACKING LIST:?\s*([\s\S]*?)(?=MUST VISIT:|PRECAUTIONS:|$)/i);
+      const precautionsMatch = text.match(/PRECAUTIONS:?\s*([\s\S]*?)(?=MUST VISIT:|PACKING LIST:|$)/i);
+
+      if (mustVisitMatch) sections.mustVisit = mustVisitMatch[1].trim();
+      if (packingMatch) sections.packingList = packingMatch[1].trim();
+      if (precautionsMatch) sections.precautions = precautionsMatch[1].trim();
+
+      return sections;
+    }
+
+    // Create a section card
+    function createSectionCard(title, content, color) {
+      const card = document.createElement('div');
+      card.className = 'section-card';
+      
+      const titleDiv = document.createElement('div');
+      titleDiv.className = 'section-title';
+      titleDiv.style.borderBottomColor = color;
+      titleDiv.textContent = title;
+      
+      const contentDiv = document.createElement('div');
+      contentDiv.className = 'section-content';
+      
+      // Convert bullet points to HTML list
+      const formattedContent = formatContent(content);
+      contentDiv.innerHTML = formattedContent;
+      
+      card.appendChild(titleDiv);
+      card.appendChild(contentDiv);
+      
+      return card;
+    }
+
+    // Format content with bullet points
+    function formatContent(text) {
+      // Split by lines and check for bullet points
+      const lines = text.split('\n').filter(line => line.trim());
+      
+      let html = '<ul>';
+      let inList = false;
+      
+      lines.forEach(line => {
+        const trimmed = line.trim();
+        // Check if line starts with bullet point or dash
+        if (trimmed.match(/^[-•*]\s/)) {
+          const content = trimmed.replace(/^[-•*]\s/, '');
+          html += `<li>${content}</li>`;
+          inList = true;
+        } else if (trimmed) {
+          if (inList) {
+            html += '</ul><p>' + trimmed + '</p><ul>';
+          } else {
+            html += '</ul><p>' + trimmed + '</p><ul>';
+          }
+        }
+      });
+      
+      html += '</ul>';
+      
+      // Clean up empty ul tags
+      html = html.replace(/<ul><\/ul>/g, '');
+      html = html.replace(/<ul>\s*<\/ul>/g, '');
+      
+      return html;
+    }
+
+    // === CHANGE PASSWORD ===
+    function setStatus(el, msg, isError = false) {
+      if (el) {
+        el.textContent = msg;
+        el.style.color = isError ? '#dc3545' : '#28a745';
+      }
+    }
+
+    document.getElementById('changeForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const statusEl = document.getElementById('changeStatus');
+      const currentPassword = document.getElementById('currentPassword').value;
+      const newPassword = document.getElementById('newPassword').value;
+
+      try {
+        setStatus(statusEl, 'Updating password...');
+        await api("/api/change-password", "POST", { currentPassword, newPassword });
+
+        // Sign out after password change
+        try {
+          await api("/api/signout", "POST");
+        } catch (_) {}
+
+        setStatus(statusEl, '✅ Password updated! Redirecting to sign in...', false);
+        setTimeout(() => { window.location.href = "/"; }, 2000);
+      } catch (err) {
+        setStatus(statusEl, '❌ ' + err.message, true);
+      }
+    });
+
+    // === DELETE ACCOUNT ===
+    document.getElementById('deleteForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      if (!confirm('Are you absolutely sure? This cannot be undone!')) {
+        return;
+      }
+
+      const statusEl = document.getElementById('deleteStatus');
+      const password = document.getElementById('deletePassword').value;
+
+      try {
+        setStatus(statusEl, 'Deleting account...');
+        await api("/api/delete-account", "POST", { password });
+
+        setStatus(statusEl, '✅ Account deleted. Redirecting...', false);
+        renderUserBadge({ signedIn: false });
+        setTimeout(() => { window.location.href = "/"; }, 2000);
+      } catch (err) {
+        setStatus(statusEl, '❌ ' + err.message, true);
+      }
+    });
+  </script>
+</body>
+</html>
