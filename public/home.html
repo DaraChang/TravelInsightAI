@@ -199,11 +199,6 @@
       font-size: 14px;
     }
 
-    @media (max-width: 420px) {
-      header .brand { font-size: 1.8rem; }
-      .tab { padding: 10px 16px; font-size: 14px; }
-    }
-
     select {
       width: 100%;
       padding: 10px 18px;
@@ -214,6 +209,72 @@
       background-color: white;
     }
 
+    /* Weather-specific styles */
+    .table-wrap {
+      overflow-x: auto;
+      margin-top: 10px;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    
+    th, td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #eee;
+      text-align: left;
+    }
+    
+    thead th {
+      background: #fafafa;
+      font-weight: 600;
+    }
+    
+    .current-list {
+      list-style: disc;
+      padding-left: 25px;
+      margin-bottom: 6px;
+    }
+    
+    .current-list li {
+      margin-bottom: 6px;
+    }
+    
+    .hourly-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 16px 0 8px;
+    }
+    
+    .hourly-range-label {
+      flex: 1;
+      text-align: center;
+      font-weight: 600;
+    }
+    
+    .nav-btn {
+      padding: 4px 8px;
+      font-size: 14px;
+    }
+    
+    #hourlyTable .row-label {
+      white-space: nowrap;
+      font-weight: 600;
+    }
+    
+    #meta {
+      white-space: pre-line;
+      line-height: 1.8;
+      color: #666;
+    }
+
+    @media (max-width: 420px) {
+      header .brand { font-size: 1.8rem; }
+      .tab { padding: 10px 16px; font-size: 14px; }
+    }
   </style>
 </head>
 <body>
@@ -228,6 +289,7 @@
   <!-- Tabs Navigation -->
   <div class="tabs">
     <button class="tab active" data-tab="trip">🌍 Plan Trip</button>
+    <button class="tab" data-tab="weather">🌤 Weather</button>
     <button class="tab" data-tab="account">⚙️ Account Settings</button>
   </div>
 
@@ -239,47 +301,40 @@
 
       <div class="row">
         <label for="destination">Destination</label>
-
-            <select id="destination">
-              <option value="" disabled selected>-- Select a destination --</option>
-
-              <optgroup label="Asia">
-                <option value="Tokyo, Japan">Tokyo, Japan</option>
-                <option value="Kyoto, Japan">Kyoto, Japan</option>
-                <option value="Osaka, Japan">Osaka, Japan</option>
-                <option value="Seoul, South Korea">Seoul, South Korea</option>
-                <option value="Bangkok, Thailand">Bangkok, Thailand</option>
-                <option value="Singapore">Singapore</option>
-              </optgroup>
-
-              <optgroup label="Europe">
-                <option value="Paris, France">Paris, France</option>
-                <option value="London, UK">London, UK</option>
-                <option value="Rome, Italy">Rome, Italy</option>
-                <option value="Barcelona, Spain">Barcelona, Spain</option>
-              </optgroup>
-
-              <optgroup label="North America">
-                <option value="New York City, USA">New York City, USA</option>
-                <option value="San Francisco, USA">San Francisco, USA</option>
-                <option value="Los Angeles, USA">Los Angeles, USA</option>
-                <option value="Austin, USA">Austin, USA</option>
-                <option value="Vancouver, Canada">Vancouver, Canada</option>
-                <option value="Toronto, Canada">Toronto, Canada</option>
-                <option value="Cancun, Mexico">Cancun, Mexico</option>
-                <option value="Mexico City, Mexico">Mexico City, Mexico</option>
-              </optgroup>
-
-              <optgroup label="South America">
-                <option value="Cusco, Peru">Cusco, Peru</option>
-                <option value="Machu Picchu, Peru">Machu Picchu, Peru</option>
-              </optgroup>
-
-            </select>
-
+        <select id="destination">
+          <option value="" disabled selected>-- Select a destination --</option>
+          <optgroup label="Asia">
+            <option value="Tokyo, Japan">Tokyo, Japan</option>
+            <option value="Kyoto, Japan">Kyoto, Japan</option>
+            <option value="Osaka, Japan">Osaka, Japan</option>
+            <option value="Seoul, South Korea">Seoul, South Korea</option>
+            <option value="Bangkok, Thailand">Bangkok, Thailand</option>
+            <option value="Singapore">Singapore</option>
+          </optgroup>
+          <optgroup label="Europe">
+            <option value="Paris, France">Paris, France</option>
+            <option value="London, UK">London, UK</option>
+            <option value="Rome, Italy">Rome, Italy</option>
+            <option value="Barcelona, Spain">Barcelona, Spain</option>
+          </optgroup>
+          <optgroup label="North America">
+            <option value="New York City, USA">New York City, USA</option>
+            <option value="San Francisco, USA">San Francisco, USA</option>
+            <option value="Los Angeles, USA">Los Angeles, USA</option>
+            <option value="Austin, USA">Austin, USA</option>
+            <option value="Vancouver, Canada">Vancouver, Canada</option>
+            <option value="Toronto, Canada">Toronto, Canada</option>
+            <option value="Cancun, Mexico">Cancun, Mexico</option>
+            <option value="Mexico City, Mexico">Mexico City, Mexico</option>
+          </optgroup>
+          <optgroup label="South America">
+            <option value="Cusco, Peru">Cusco, Peru</option>
+            <option value="Machu Picchu, Peru">Machu Picchu, Peru</option>
+          </optgroup>
+        </select>
       </div>
 
-    <div class="row">
+      <div class="row">
         <label>Start Date</label>
         <input id="startDate" type="date">
       </div>
@@ -301,9 +356,89 @@
     </div>
   </div>
 
-  <!-- Tab 2: Account Settings -->
+  <!-- Tab 2: Weather -->
+  <div id="weather-content" class="tab-content">
+    <div class="card">
+      <h2>Weather Forecast</h2>
+      <p style="color:#666;">Check current conditions and upcoming forecasts.</p>
+  
+      <div class="row">
+        <label>City (optional)</label>
+        <input id="city" type="text" placeholder="Austin" />
+      </div>
+  
+      <div style="text-align:center; margin:8px 0; color:#999;">or</div>
+  
+      <div class="row">
+        <label>Latitude</label>
+        <input id="lat" type="text" placeholder="30.26" />
+      </div>
+  
+      <div class="row">
+        <label>Longitude</label>
+        <input id="lon" type="text" placeholder="-97.74" />
+      </div>
+  
+      <div class="row">
+        <label>Unit</label>
+        <select id="unit">
+          <option value="c">°C</option>
+          <option value="f">°F</option>
+        </select>
+      </div>
+  
+      <button id="go" style="margin-top:8px;">Fetch Weather</button>
+      <div id="status" class="status"></div>
+    </div>
+  
+    <!-- Location -->
+    <div class="card">
+      <h2 id="locTitle">Location</h2>
+      <p id="meta"></p>
+    </div>
+  
+    <!-- Current Conditions -->
+    <div class="card">
+      <h2>Current Conditions</h2>
+      <ul id="currentList" class="current-list"></ul>
+    </div>
+  
+    <!-- Hourly Forecast -->
+    <div class="card">
+      <h2>Daily Forecast (Next 24 hours)</h2>
+      <div class="hourly-header">
+        <button id="hourlyPrev" type="button" class="nav-btn">◀</button>
+        <span id="hourlyRangeLabel" class="hourly-range-label">Next 24 hours</span>
+        <button id="hourlyNext" type="button" class="nav-btn">▶</button>
+      </div>
+      <div class="table-wrap">
+        <table id="hourlyTable">
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  
+    <!-- Weekly Forecast -->
+    <div class="card">
+      <h2>Weekly Forecast (Next 7 days)</h2>
+      <div class="table-wrap">
+        <table id="dailyTable">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th id="dailyMinHeader">Min (°C)</th>
+              <th id="dailyMaxHeader">Max (°C)</th>
+              <th>Rain (%)</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 3: Account Settings -->
   <div id="account-content" class="tab-content">
-    <!-- Change Password Section -->
     <div class="card">
       <h2>Change Password</h2>
       <p style="color: #666;">Update your account password for better security.</p>
@@ -324,7 +459,6 @@
       </form>
     </div>
 
-    <!-- Delete Account Section -->
     <div class="card">
       <h2>Delete Account</h2>
       <p style="color: #dc3545; font-weight: 500;">⚠️ This action is irreversible. Your account and all data will be permanently deleted.</p>
@@ -341,265 +475,6 @@
     </div>
   </div>
 
-  <script type="module">
-    import { api, renderUserBadge } from './app.js';
-
-    // Check authentication
-    async function checkAuth() {
-      try {
-        const me = await api("/api/me");
-        if (!me.signedIn) {
-          window.location.href = "/";
-          return null;
-        }
-        renderUserBadge(me);
-        return me;
-      } catch (e) {
-        window.location.href = "/";
-        return null;
-      }
-    }
-
-    const me = await checkAuth();
-    if (!me) throw new Error("Not authenticated");
-
-    // Tab Switching
-    const tabs = document.querySelectorAll('.tab');
-    const tabContents = document.querySelectorAll('.tab-content');
-
-    tabs.forEach(tab => {
-      tab.addEventListener('click', () => {
-        const targetTab = tab.dataset.tab;
-        
-        // Update active tab
-        tabs.forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        
-        // Update active content
-        tabContents.forEach(content => {
-          content.classList.remove('active');
-        });
-        document.getElementById(`${targetTab}-content`).classList.add('active');
-      });
-    });
-
-    // Sign Out
-    document.getElementById('signoutBtn').onclick = async () => {
-      try {
-        await api("/api/signout", "POST");
-      } finally {
-        window.location.href = "/";
-      }
-    };
-
-    // === TRIP PLANNING ===
-    document.getElementById('planTrip').onclick = async () => {
-      const btn = document.getElementById('planTrip');
-      btn.disabled = true;
-      const outDiv = document.getElementById('out');
-      outDiv.innerHTML = '<div class="empty-state"><span style="font-size: 3rem;">🔄</span><p>Planning your trip...</p></div>';
-
-      try {
-        const destination = document.getElementById('destination').value.trim();
-        const startDate = document.getElementById('startDate').value;
-        const endDate = document.getElementById('endDate').value;
-
-        if (!destination || !startDate || !endDate) {
-          alert('Please fill in all fields');
-          btn.disabled = false;
-          return;
-        }
-
-        const data = await api("/api/travel-plan", "POST", { destination, startDate, endDate });
-
-        if (data.error) {
-          outDiv.innerHTML = '<div class="empty-state"><span style="font-size: 3rem;">❌</span><p>Error: ' + data.error + '</p></div>';
-        } else {
-          // Parse and format the response
-          formatTravelPlan(outDiv, data);
-        }
-      } catch (e) {
-        outDiv.innerHTML = '<div class="empty-state"><span style="font-size: 3rem;">❌</span><p>Request failed: ' + e.message + '</p></div>';
-      } finally {
-        btn.disabled = false;
-      }
-    };
-
-    // Format travel plan into structured sections
-    function formatTravelPlan(container, data) {
-      container.innerHTML = '';
-      
-      // Header with trip info
-      const header = document.createElement('div');
-      header.style.cssText = 'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; margin-bottom: 16px;';
-      header.innerHTML = `
-        <div style="font-size: 1.5rem; font-weight: bold; margin-bottom: 8px;">📍 ${data.destination}</div>
-        <div style="font-size: 1rem; opacity: 0.9;">📅 ${data.startDate} → ${data.endDate}</div>
-      `;
-      container.appendChild(header);
-
-      // Parse the answer into sections
-      const answer = data.answer;
-      const sections = parseResponseIntoSections(answer);
-
-      // Must Visit Section
-      if (sections.mustVisit) {
-        const mustVisitCard = createSectionCard('🏛️ Must Visit', sections.mustVisit, '#667eea');
-        container.appendChild(mustVisitCard);
-      }
-
-      // Packing List Section
-      if (sections.packingList) {
-        const packingCard = createSectionCard('🎒 Packing List', sections.packingList, '#10b981');
-        container.appendChild(packingCard);
-      }
-
-      // Precautions Section
-      if (sections.precautions) {
-        const precautionsCard = createSectionCard('⚠️ Precautions & Tips', sections.precautions, '#f59e0b');
-        container.appendChild(precautionsCard);
-      }
-
-      // If no sections found, display raw response
-      if (!sections.mustVisit && !sections.packingList && !sections.precautions) {
-        const fallbackCard = document.createElement('div');
-        fallbackCard.className = 'section-card';
-        fallbackCard.innerHTML = `
-          <div class="section-title">📋 Travel Information</div>
-          <div class="section-content" style="white-space: pre-wrap;">${answer}</div>
-        `;
-        container.appendChild(fallbackCard);
-      }
-    }
-
-    // Parse response into sections
-    function parseResponseIntoSections(text) {
-      const sections = {
-        mustVisit: '',
-        packingList: '',
-        precautions: ''
-      };
-
-      // Split by common section headers (case insensitive)
-      const mustVisitMatch = text.match(/MUST VISIT:?\s*([\s\S]*?)(?=PACKING LIST:|PRECAUTIONS:|$)/i);
-      const packingMatch = text.match(/PACKING LIST:?\s*([\s\S]*?)(?=MUST VISIT:|PRECAUTIONS:|$)/i);
-      const precautionsMatch = text.match(/PRECAUTIONS:?\s*([\s\S]*?)(?=MUST VISIT:|PACKING LIST:|$)/i);
-
-      if (mustVisitMatch) sections.mustVisit = mustVisitMatch[1].trim();
-      if (packingMatch) sections.packingList = packingMatch[1].trim();
-      if (precautionsMatch) sections.precautions = precautionsMatch[1].trim();
-
-      return sections;
-    }
-
-    // Create a section card
-    function createSectionCard(title, content, color) {
-      const card = document.createElement('div');
-      card.className = 'section-card';
-      
-      const titleDiv = document.createElement('div');
-      titleDiv.className = 'section-title';
-      titleDiv.style.borderBottomColor = color;
-      titleDiv.textContent = title;
-      
-      const contentDiv = document.createElement('div');
-      contentDiv.className = 'section-content';
-      
-      // Convert bullet points to HTML list
-      const formattedContent = formatContent(content);
-      contentDiv.innerHTML = formattedContent;
-      
-      card.appendChild(titleDiv);
-      card.appendChild(contentDiv);
-      
-      return card;
-    }
-
-    // Format content with bullet points
-    function formatContent(text) {
-      // Split by lines and check for bullet points
-      const lines = text.split('\n').filter(line => line.trim());
-      
-      let html = '<ul>';
-      let inList = false;
-      
-      lines.forEach(line => {
-        const trimmed = line.trim();
-        // Check if line starts with bullet point or dash
-        if (trimmed.match(/^[-•*]\s/)) {
-          const content = trimmed.replace(/^[-•*]\s/, '');
-          html += `<li>${content}</li>`;
-          inList = true;
-        } else if (trimmed) {
-          if (inList) {
-            html += '</ul><p>' + trimmed + '</p><ul>';
-          } else {
-            html += '</ul><p>' + trimmed + '</p><ul>';
-          }
-        }
-      });
-      
-      html += '</ul>';
-      
-      // Clean up empty ul tags
-      html = html.replace(/<ul><\/ul>/g, '');
-      html = html.replace(/<ul>\s*<\/ul>/g, '');
-      
-      return html;
-    }
-
-    // === CHANGE PASSWORD ===
-    function setStatus(el, msg, isError = false) {
-      if (el) {
-        el.textContent = msg;
-        el.style.color = isError ? '#dc3545' : '#28a745';
-      }
-    }
-
-    document.getElementById('changeForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const statusEl = document.getElementById('changeStatus');
-      const currentPassword = document.getElementById('currentPassword').value;
-      const newPassword = document.getElementById('newPassword').value;
-
-      try {
-        setStatus(statusEl, 'Updating password...');
-        await api("/api/change-password", "POST", { currentPassword, newPassword });
-
-        // Sign out after password change
-        try {
-          await api("/api/signout", "POST");
-        } catch (_) {}
-
-        setStatus(statusEl, '✅ Password updated! Redirecting to sign in...', false);
-        setTimeout(() => { window.location.href = "/"; }, 2000);
-      } catch (err) {
-        setStatus(statusEl, '❌ ' + err.message, true);
-      }
-    });
-
-    // === DELETE ACCOUNT ===
-    document.getElementById('deleteForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      if (!confirm('Are you absolutely sure? This cannot be undone!')) {
-        return;
-      }
-
-      const statusEl = document.getElementById('deleteStatus');
-      const password = document.getElementById('deletePassword').value;
-
-      try {
-        setStatus(statusEl, 'Deleting account...');
-        await api("/api/delete-account", "POST", { password });
-
-        setStatus(statusEl, '✅ Account deleted. Redirecting...', false);
-        renderUserBadge({ signedIn: false });
-        setTimeout(() => { window.location.href = "/"; }, 2000);
-      } catch (err) {
-        setStatus(statusEl, '❌ ' + err.message, true);
-      }
-    });
-  </script>
+  <script type="module" src="./weather-ui.js"></script>
 </body>
 </html>

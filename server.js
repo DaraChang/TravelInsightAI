@@ -1,5 +1,5 @@
 // server.js
-// Simple auth server with JSON "database" and bcrypt password hashing
+// Auth server with weather API and travel planning
 
 import express from "express";
 import session from "express-session";
@@ -10,14 +10,20 @@ import cors from "cors";
 import bodyParser from "body-parser";
 import { fileURLToPath } from "url";
 
-const __filename = fileURLToPath(
-    import.meta.url);
+const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const USERS_FILE = path.join(__dirname, "users.json");
 const SALT_ROUNDS = 12;
 
+// Open-Meteo endpoints
+const WX_BASE = "https://api.open-meteo.com/v1/forecast";
+const GEO_BASE = "https://geocoding-api.open-meteo.com/v1/search";
+const AQ_BASE = "https://air-quality-api.open-meteo.com/v1/air-quality";
+
 const app = express();
+const PORT = process.env.PORT || 3000;
+
 app.use(cors({ origin: true, credentials: true }));
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "public")));
@@ -31,7 +37,10 @@ app.use(
     })
 );
 
-// Ensure users.json exists
+// ============================================================================
+// FILE SYSTEM HELPERS
+// ============================================================================
+
 async function ensureUsersFile() {
     try {
         await fs.access(USERS_FILE);
@@ -52,10 +61,211 @@ async function writeUsers(users) {
     await fs.writeFile(USERS_FILE, JSON.stringify({ users }, null, 2), "utf-8");
 }
 
-// Helpers
 function sanitizeId(id) {
     return String(id || "").trim();
 }
+
+// ============================================================================
+// WEATHER API HELPERS
+// ============================================================================
+
+async function resolveLocation({ city, lat, lon }) {
+    if (Number.isFinite(lat) && Number.isFinite(lon)) {
+        return { lat, lon, label: `Latitude: ${lat}, Longitude: ${lon}` };
+    }
+    if (city) {
+        const url = `${GEO_BASE}?name=${encodeURIComponent(city)}&count=1&language=en&format=json`;
+        const r = await fetch(url);
+        if (!r.ok) throw new Error(`Geocoding failed: ${r.status}`);
+        const data = await r.json();
+        if (!data.results?.length) throw new Error(`City not found: ${city}`);
+        const x = data.results[0];
+        return {
+            lat: x.latitude,
+            lon: x.longitude,
+            label: [x.name, x.admin1, x.country].filter(Boolean).join(", "),
+        };
+    }
+    // Default: Austin, TX
+    return { lat: 30.2672, lon: -97.7431, label: "Austin, TX, United States" };
+}
+
+async function fetchWeather(lat, lon, timezone = "auto") {
+    const params = new URLSearchParams({
+        latitude: lat,
+        longitude: lon,
+        timezone,
+        hourly: [
+            "temperature_2m",
+            "relative_humidity_2m",
+            "visibility",
+            "uv_index",
+            "precipitation_probability",
+        ].join(","),
+        daily: [
+            "temperature_2m_min",
+            "temperature_2m_max",
+            "precipitation_probability_max",
+            "sunrise",
+            "sunset",
+            "uv_index_max",
+        ].join(","),
+        current: ["temperature_2m", "relative_humidity_2m", "uv_index"].join(","),
+    });
+    const r = await fetch(`${WX_BASE}?${params.toString()}`);
+    if (!r.ok) throw new Error(`Forecast failed: ${r.status} ${r.statusText}`);
+    return r.json();
+}
+
+async function fetchAirQuality(lat, lon, timezone = "auto") {
+    const params = new URLSearchParams({
+        latitude: lat,
+        longitude: lon,
+        timezone,
+        hourly: ["us_aqi", "pm2_5"].join(","),
+    });
+    const r = await fetch(`${AQ_BASE}?${params.toString()}`);
+    if (!r.ok) throw new Error(`Air quality failed: ${r.status} ${r.statusText}`);
+    return r.json();
+}
+
+function currentLocalHourKey(timezone) {
+    try {
+        const fmt = new Intl.DateTimeFormat("en-CA", {
+            timeZone: timezone,
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            hour12: false,
+        });
+        const parts = fmt.formatToParts(new Date());
+        const get = type => parts.find(p => p.type === type)?.value.padStart(2, "0");
+        const y = get("year");
+        const m = get("month");
+        const d = get("day");
+        const h = get("hour");
+        if (!y || !m || !d || !h) return null;
+        return `${y}-${m}-${d}T${h}`;
+    } catch {
+        return null;
+    }
+}
+
+function normalizeData(wx, aq, meta) {
+    const nowMs = Date.now();
+
+    const hourlyTimes = wx.hourly?.time || [];
+    const hourlyTemp = wx.hourly?.temperature_2m || [];
+    const hourlyHum = wx.hourly?.relative_humidity_2m || [];
+    const hourlyVis = wx.hourly?.visibility || [];
+    const hourlyUv = wx.hourly?.uv_index || [];
+    const hourlyProb = wx.hourly?.precipitation_probability || [];
+
+    let nowIndex = 0;
+    if (hourlyTimes.length) {
+        const keyNow = currentLocalHourKey(wx.timezone);
+        if (keyNow) {
+            const i = hourlyTimes.findIndex(t => String(t).slice(0, 13) === keyNow);
+            if (i !== -1) nowIndex = i;
+        }
+    }
+
+    const hourly24 = [];
+    for (let k = 0; k < 24 && nowIndex + k < hourlyTimes.length; k++) {
+        const i = nowIndex + k;
+        hourly24.push({
+            time: hourlyTimes[i],
+            temp_c: num(hourlyTemp[i]),
+            humidity: num(hourlyHum[i]),
+            visibility_m: num(hourlyVis[i]),
+            uv_index: num(hourlyUv[i]),
+            precip_prob: num(hourlyProb[i]),
+        });
+    }
+
+    const dTimes = wx.daily?.time || [];
+    const tmin = wx.daily?.temperature_2m_min || [];
+    const tmax = wx.daily?.temperature_2m_max || [];
+    const dProb = wx.daily?.precipitation_probability_max || [];
+    const dSunrise = wx.daily?.sunrise || [];
+    const dSunset = wx.daily?.sunset || [];
+    const dUvMax = wx.daily?.uv_index_max || [];
+
+    const daily7 = [];
+    for (let i = 0; i < Math.min(7, dTimes.length); i++) {
+        daily7.push({
+            date: dTimes[i],
+            min_c: num(tmin[i]),
+            max_c: num(tmax[i]),
+            precip_prob_max: num(dProb[i]),
+            sunrise: dSunrise[i] || null,
+            sunset: dSunset[i] || null,
+            uv_index_max: num(dUvMax[i]),
+        });
+    }
+
+    const idx = hourlyTimes.length ? nowIndex : null;
+    const current = {
+        humidity: idx != null ? num(hourlyHum[idx]) : null,
+        visibility_m: idx != null ? num(hourlyVis[idx]) : null,
+        uv_index: idx != null ? num(hourlyUv[idx]) : null,
+        sunrise: daily7[0]?.sunrise || null,
+        sunset: daily7[0]?.sunset || null,
+        air_quality: nearestAirQuality(aq, nowMs),
+    };
+
+    return {
+        location: meta.label,
+        latitude: meta.lat,
+        longitude: meta.lon,
+        timezone: wx.timezone,
+        generated_at: new Date().toISOString(),
+        current,
+        hourly24,
+        daily7,
+    };
+}
+
+function nearestTimeIndex(times, nowMs) {
+    if (!times?.length) return null;
+    let best = 0;
+    let bestDiff = Infinity;
+    for (let i = 0; i < times.length; i++) {
+        const t = new Date(times[i]).getTime();
+        const diff = Math.abs(t - nowMs);
+        if (diff < bestDiff) {
+            best = i;
+            bestDiff = diff;
+        }
+    }
+    return best;
+}
+
+function nearestAirQuality(aq, nowMs) {
+    try {
+        const times = aq?.hourly?.time || [];
+        const us = aq?.hourly?.us_aqi || [];
+        const pm25 = aq?.hourly?.pm2_5 || [];
+        if (!times.length) return null;
+        const idx = nearestTimeIndex(times, nowMs);
+        return {
+            us_aqi: num(us[idx]),
+            pm2_5: num(pm25[idx]),
+        };
+    } catch {
+        return null;
+    }
+}
+
+function num(v) {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+}
+
+// ============================================================================
+// OLLAMA AI HELPER
+// ============================================================================
 
 async function askOllama(prompt) {
     const body = {
@@ -80,6 +290,9 @@ async function askOllama(prompt) {
     return data.response || "";
 }
 
+// ============================================================================
+// ROUTES - AUTHENTICATION
+// ============================================================================
 
 app.get("/api/me", (req, res) => {
     if (req.session.userId) {
@@ -88,7 +301,6 @@ app.get("/api/me", (req, res) => {
     res.json({ signedIn: false });
 });
 
-// Sign up
 app.post("/api/signup", async(req, res) => {
     try {
         const { userId, password } = req.body || {};
@@ -113,7 +325,6 @@ app.post("/api/signup", async(req, res) => {
     }
 });
 
-// Sign in
 app.post("/api/signin", async(req, res) => {
     try {
         const { userId, password } = req.body || {};
@@ -135,7 +346,6 @@ app.post("/api/signin", async(req, res) => {
     }
 });
 
-// Change password
 app.post("/api/change-password", async(req, res) => {
     try {
         if (!req.session.userId) return res.status(401).json({ error: "Not signed in" });
@@ -163,7 +373,6 @@ app.post("/api/change-password", async(req, res) => {
     }
 });
 
-// Delete account
 app.post("/api/delete-account", async(req, res) => {
     try {
         if (!req.session.userId) return res.status(401).json({ error: "Not signed in" });
@@ -190,23 +399,41 @@ app.post("/api/delete-account", async(req, res) => {
     }
 });
 
-// Sign out (optional)
 app.post("/api/signout", (req, res) => {
     req.session.destroy(() => res.json({ ok: true, message: "Signed out" }));
 });
 
-// Fallback to index.html for root
-app.get("/", (_req, res) => {
-    res.sendFile(path.join(__dirname, "public", "index.html"));
+// ============================================================================
+// ROUTES - WEATHER API
+// ============================================================================
+
+app.get("/api/weather", async (req, res) => {
+    try {
+        let { city = "", lat, lon, tz } = req.query;
+        city = String(city || "").trim();
+        lat = lat !== undefined ? Number(lat) : undefined;
+        lon = lon !== undefined ? Number(lon) : undefined;
+
+        const meta = await resolveLocation({ city, lat, lon });
+
+        const [wx, aq] = await Promise.all([
+            fetchWeather(meta.lat, meta.lon, tz || "auto"),
+            fetchAirQuality(meta.lat, meta.lon, tz || "auto").catch(() => null),
+        ]);
+
+        const normalized = normalizeData(wx, aq, meta);
+
+        res.json(normalized);
+    } catch (err) {
+        console.error("Weather API error:", err);
+        res.status(400).json({ error: err?.message || "Bad Request" });
+    }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, async() => {
-    await ensureUsersFile();
-    console.log(`Server running at http://localhost:${PORT}`);
-});
+// ============================================================================
+// ROUTES - TRAVEL PLANNING
+// ============================================================================
 
-// Send prompt to ollama
 app.post("/api/travel-plan", async(req, res) => {
     try {
         if (!req.session.userId) {
@@ -252,4 +479,17 @@ app.post("/api/travel-plan", async(req, res) => {
         console.error(e);
         res.status(500).json({ error: e.message });
     }
+});
+
+// ============================================================================
+// STATIC FILES & SERVER START
+// ============================================================================
+
+app.get("/", (_req, res) => {
+    res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+app.listen(PORT, async() => {
+    await ensureUsersFile();
+    console.log(`Server running at http://localhost:${PORT}`);
 });

@@ -12,8 +12,9 @@
     },
     {
       "userId": "dara",
-      "passwordHash": "$2b$12$pm/EcIKVSJgGsGqrWP1VvecvyEr8allNvDjS9tWlZ/ohnSiDPpczG",
-      "createdAt": "2025-11-26T19:35:29.994Z"
+      "passwordHash": "$2b$12$SnQi/9n1kdnxerOOWOvbCOW1vV79oL1urdllHDPGj.bwjyQxAhD0W",
+      "createdAt": "2025-11-26T19:35:29.994Z",
+      "updatedAt": "2025-11-29T17:01:50.659Z"
     }
   ]
 }
