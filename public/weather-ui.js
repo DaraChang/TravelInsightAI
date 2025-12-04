@@ -17,7 +17,7 @@ import {
 } from './app.js';
 
 // ============================================================================
-// AUTHENTICATION CHECK
+// Authrntication Check
 // ============================================================================
 
 async function checkAuth() {
@@ -39,7 +39,7 @@ const me = await checkAuth();
 if (!me) throw new Error("Not authenticated");
 
 // ============================================================================
-// TAB SWITCHING
+// Tab Switching
 // ============================================================================
 
 const tabs = document.querySelectorAll('.tab');
@@ -67,7 +67,7 @@ document.getElementById('signoutBtn').onclick = async () => {
 };
 
 // ============================================================================
-// TRIP PLANNING
+// Trip Planning
 // ============================================================================
 
 document.getElementById('planTrip').onclick = async () => {
@@ -187,7 +187,45 @@ function formatContent(text) {
 }
 
 // ============================================================================
-// WEATHER FEATURE - COMPLETE VERSION
+// Date Validation
+// ============================================================================
+
+// Set up date validation for trip planning
+const startDateInput = document.getElementById('startDate');
+const endDateInput = document.getElementById('endDate');
+
+// Set minimum date to today for both inputs
+const today = new Date().toISOString().split('T')[0];
+startDateInput.setAttribute('min', today);
+endDateInput.setAttribute('min', today);
+
+// Update end date minimum when start date changes
+startDateInput.addEventListener('change', function() {
+  const startDate = this.value;
+  if (startDate) {
+    endDateInput.setAttribute('min', startDate);
+    
+    // If end date is before start date, clear it
+    if (endDateInput.value && endDateInput.value < startDate) {
+      endDateInput.value = '';
+    }
+  }
+});
+
+// Validate end date is not before start date
+endDateInput.addEventListener('change', function() {
+  const startDate = startDateInput.value;
+  const endDate = this.value;
+  
+  if (startDate && endDate && endDate < startDate) {
+    alert('End date cannot be before start date');
+    this.value = '';
+  }
+});
+
+
+// ============================================================================
+// Weather Feature
 // ============================================================================
 
 const el = {
@@ -453,7 +491,7 @@ el.hourlyNext?.addEventListener("click", () => {
 });
 
 // ============================================================================
-// ACCOUNT SETTINGS
+// Account Settings
 // ============================================================================
 
 document.getElementById('changeForm').addEventListener('submit', async (e) => {

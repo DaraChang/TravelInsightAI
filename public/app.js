@@ -1,8 +1,7 @@
 // public/app.js
-// Merged: Authentication + Full Weather functionality with all features
 
 // ============================================================================
-// API HELPERS
+// API Helpers
 // ============================================================================
 
 export async function api(path, method = "GET", body) {
@@ -26,7 +25,7 @@ export function setStatus(el, msg, isError = false) {
 }
 
 // ============================================================================
-// AUTHENTICATION
+// Authentication
 // ============================================================================
 
 export async function getMe() {
@@ -70,7 +69,7 @@ export async function signOutAndRedirect() {
 }
 
 // ============================================================================
-// WEATHER API
+// Weather API
 // ============================================================================
 
 export async function callWeatherApi(params) {
@@ -97,7 +96,7 @@ export async function callWeatherApi(params) {
 }
 
 // ============================================================================
-// WEATHER FORMATTING HELPERS
+// Weather Formatting Helpers
 // ============================================================================
 
 export const cToF = c => (c * 9) / 5 + 32;
@@ -171,7 +170,7 @@ export function currentLocalHourKey(timezone) {
 }
 
 // ============================================================================
-// WEATHER DATA NORMALIZATION
+// Weather Data Normalization
 // ============================================================================
 
 export function normalizeWeather(apiData) {

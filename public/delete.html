@@ -6,10 +6,10 @@
   <style>
     body { font-family: system-ui, sans-serif; max-width: 640px; margin: 40px auto; }
 
-    /* Header: centered title, right column stacks badge over button */
+    /* Header CSS: centered title, right column stacks badge over button */
     header.site-header {
       display: grid;
-      grid-template-columns: 1fr auto; /* left spacer, right controls */
+      grid-template-columns: 1fr auto;
       align-items: center;
       margin-bottom: 16px;
       min-height: 64px;
@@ -20,7 +20,7 @@
       left: 50%;
       transform: translateX(-50%);
       font-weight: 800;
-      font-size: 2.2rem;   /* larger centered title */
+      font-size: 2.2rem;
       text-align: center;
       line-height: 1.2;
       white-space: nowrap;
@@ -29,7 +29,7 @@
       display: grid;
       justify-items: end;
       align-items: center;
-      gap: 6px;            /* space between badge and button */
+      gap: 6px; /* space between badge and button */
     }
 
     .badge {
@@ -46,13 +46,13 @@
     button { padding: 8px 12px; background: #b00020; color: white; border: none; }
     .status { min-height: 1.5em; }
 
-    /* Tweak for narrow screens */
     @media (max-width: 420px) {
       header .brand { font-size: 1.8rem; }
     }
   </style>
 </head>
 <body>
+  <!-- Header UI -->
   <header class="site-header">
     <div class="brand">Travel Explorer</div>
     <div class="right">
@@ -62,6 +62,7 @@
     </div>
   </header>
 
+  <!-- Delete Account Form -->
   <h1>Delete Account</h1>
   <p style="color:#b00020">This action is irreversible.</p>
   <form id="deleteForm">
@@ -75,14 +76,14 @@
   <script type="module">
     import { api, setStatus, getMe, renderUserBadge } from "./app.js";
 
-    // Require sign-in: if not signed in, redirect to "/"
+    // Check if the user is signed in. If not signed in, redirect to "/"
     async function enforceAuth() {
       const me = await getMe().catch(() => ({ signedIn: false }));
       if (!me?.signedIn) {
         window.location.href = "/";
         return null;
       }
-      // set badge and show signout button
+      // Set badge and show signout button
       renderUserBadge(me);
       const btn = document.getElementById("signoutBtn");
       if (btn) btn.style.display = "inline-block";
@@ -91,7 +92,7 @@
 
     const me = await enforceAuth();
     if (!me) {
-      // redirected already
+      // Redirected already
       throw new Error("Redirecting to sign in");
     }
 
@@ -105,7 +106,7 @@
         setStatus(statusEl, "Deleting account…");
         await api("/api/delete-account", "POST", { password });
         setStatus(statusEl, "Account deleted. Redirecting to sign in in 3 seconds…", false);
-        // Reflect as Guest visually (optional)
+        // Show as Guest
         renderUserBadge({ signedIn: false });
         // Redirect after 3 seconds
         setTimeout(() => { window.location.href = "/"; }, 3000);
@@ -114,7 +115,7 @@
       }
     });
 
-    // Sign Out: immediate redirect to Sign In
+    // Immediately redirect to Sign In after Sign out
     const btn = document.getElementById("signoutBtn");
     if (btn) {
       btn.addEventListener("click", async () => {

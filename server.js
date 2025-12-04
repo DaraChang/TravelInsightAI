@@ -1,5 +1,4 @@
 // server.js
-// Auth server with weather API and travel planning
 
 import express from "express";
 import session from "express-session";
@@ -38,7 +37,7 @@ app.use(
 );
 
 // ============================================================================
-// FILE SYSTEM HELPERS
+// File System Helpers
 // ============================================================================
 
 async function ensureUsersFile() {
@@ -66,7 +65,7 @@ function sanitizeId(id) {
 }
 
 // ============================================================================
-// WEATHER API HELPERS
+// Weather API Helpers
 // ============================================================================
 
 async function resolveLocation({ city, lat, lon }) {
@@ -264,7 +263,7 @@ function num(v) {
 }
 
 // ============================================================================
-// OLLAMA AI HELPER
+// Ollama AI Helpers
 // ============================================================================
 
 async function askOllama(prompt) {
@@ -291,7 +290,7 @@ async function askOllama(prompt) {
 }
 
 // ============================================================================
-// ROUTES - AUTHENTICATION
+// Authentication API Endpoints
 // ============================================================================
 
 app.get("/api/me", (req, res) => {
@@ -404,7 +403,7 @@ app.post("/api/signout", (req, res) => {
 });
 
 // ============================================================================
-// ROUTES - WEATHER API
+// Weather API Endpoints
 // ============================================================================
 
 app.get("/api/weather", async (req, res) => {
@@ -431,7 +430,7 @@ app.get("/api/weather", async (req, res) => {
 });
 
 // ============================================================================
-// ROUTES - TRAVEL PLANNING
+// Travel Planning Endpoints
 // ============================================================================
 
 app.post("/api/travel-plan", async(req, res) => {
@@ -482,7 +481,7 @@ app.post("/api/travel-plan", async(req, res) => {
 });
 
 // ============================================================================
-// STATIC FILES & SERVER START
+// Server Start
 // ============================================================================
 
 app.get("/", (_req, res) => {

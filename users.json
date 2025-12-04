@@ -12,9 +12,18 @@
     },
     {
       "userId": "dara",
-      "passwordHash": "$2b$12$SnQi/9n1kdnxerOOWOvbCOW1vV79oL1urdllHDPGj.bwjyQxAhD0W",
-      "createdAt": "2025-11-26T19:35:29.994Z",
-      "updatedAt": "2025-11-29T17:01:50.659Z"
+      "passwordHash": "$2b$12$I3hvcFC.ReyzqgRROdGWZeZvaElFaYuhLuCcEdOJ9IKbsiJ3qwtbi",
+      "createdAt": "2025-12-03T23:49:41.031Z"
+    },
+    {
+      "userId": "user1",
+      "passwordHash": "$2b$12$Pv0ZwcNgIDDWmZtS5dUIr./IZ4v6AUo16XrCNYPd.Fua3tksM08ie",
+      "createdAt": "2025-12-04T01:22:22.557Z"
+    },
+    {
+      "userId": "user2",
+      "passwordHash": "$2b$12$qtrHMcy7qdBkvn9NsZ5Jm.XFZQqh7qN.X2Mmj7i2k/TSvgbvNC8Pu",
+      "createdAt": "2025-12-04T01:35:25.966Z"
     }
   ]
 }

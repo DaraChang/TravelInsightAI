@@ -6,10 +6,10 @@
   <style>
     body { font-family: system-ui, sans-serif; max-width: 640px; margin: 40px auto; }
 
-    /* Header: centered title, right column stacks badge over button */
+    /* Header CSS: centered title, right column stacks badge over button */
     header.site-header {
       display: grid;
-      grid-template-columns: 1fr auto; /* left spacer, right controls */
+      grid-template-columns: 1fr auto;
       align-items: center;
       margin-bottom: 16px;
       min-height: 64px;
@@ -20,7 +20,7 @@
       left: 50%;
       transform: translateX(-50%);
       font-weight: 800;
-      font-size: 2.2rem;   /* larger centered title */
+      font-size: 2.2rem;
       text-align: center;
       line-height: 1.2;
       white-space: nowrap;
@@ -29,7 +29,7 @@
       display: grid;
       justify-items: end;
       align-items: center;
-      gap: 6px;            /* space between badge and button */
+      gap: 6px; /* space between badge and button */
     }
 
     .badge {
@@ -46,7 +46,6 @@
     button { padding: 8px 12px; }
     .status { min-height: 1.5em; }
 
-    /* Tweak for narrow screens */
     @media (max-width: 420px) {
       header .brand { font-size: 1.8rem; }
     }
