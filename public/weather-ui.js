@@ -1,4 +1,4 @@
-// weather-ui.js - Handles all UI interactions for the Travel Explorer app
+// public/weather-ui.js - Handles all UI interactions for the Travel Explorer app
 
 import { 
   api,
@@ -17,7 +17,7 @@ import {
 } from './app.js';
 
 // ============================================================================
-// Authrntication Check
+// Authentication Check
 // ============================================================================
 
 async function checkAuth() {
